@@ -9,6 +9,9 @@ from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'kaleidoscop-secret-2024')
+@app.route('/')
+def index():
+    return redirect(url_for('admin_login'))
 
 # ─── DB CONFIG ────────────────────────────────────────────────────────────────
 DB_CONFIG = {
