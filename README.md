@@ -54,7 +54,7 @@ export DB_NAME=kaleidoscop
 export DB_USER=postgres
 export DB_PASSWORD=your_password
 export ADMIN_PASSWORD=admin2024
-export BASE_URL=http://YOUR_LOCAL_IP:5000   # <-- важно для QR!
+export BASE_URL=http://YOUR_LOCAL_IP:5000   
 export SECRET_KEY=your-secret-key
 ```
 
@@ -80,7 +80,7 @@ export BASE_URL=http://192.168.1.XXX:5000
 
 ### Смена пароля администратора
 ```bash
-export ADMIN_PASSWORD=ваш_пароль
+export ADMIN_PASSWORD=admin2024
 ```
 
 ---
