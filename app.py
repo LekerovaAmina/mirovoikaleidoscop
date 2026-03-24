@@ -275,6 +275,19 @@ def api_my_status():
         return jsonify({'team_id': p['team_id'], 'voted_for': p['voted_for']})
     return jsonify({'team_id': None, 'voted_for': None})
 
+@app.route('/api/reset-round', methods=['POST'])
+def api_reset_round():
+    if not session.get('is_admin'):
+        return jsonify({'error': 'Unauthorized'}), 401
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM participants")
+    cur.execute("DELETE FROM teams")
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({'ok': True})
+
 with app.app_context():
     try:
         init_db()
