@@ -9,6 +9,7 @@ from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'kaleidoscop-secret-2024')
+
 @app.route('/')
 def index():
     return redirect(url_for('admin_login'))
@@ -274,6 +275,13 @@ def api_my_status():
         return jsonify({'team_id': p['team_id'], 'voted_for': p['voted_for']})
     return jsonify({'team_id': None, 'voted_for': None})
 
+with app.app_context():
+    try:
+        init_db()
+    except Exception as e:
+        print(f"DB init error: {e}")
+
 if __name__ == '__main__':
-    init_db()
+    
     app.run(debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 8080)))
+
