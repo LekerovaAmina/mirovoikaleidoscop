@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: kaleidoscop
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      DB_HOST: db
+      DB_NAME: kaleidoscop
+      DB_USER: postgres
+      DB_PASSWORD: password
+      ADMIN_PASSWORD: admin2024
+      BASE_URL: http://localhost:5000
+      SECRET_KEY: change-this-secret-key
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:

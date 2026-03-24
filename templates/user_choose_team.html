@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+{% block title %}Выбор команды — Мировой калейдоскоп{% endblock %}
+{% block head %}
+<style>
+  body {
+    background: linear-gradient(160deg, #FFF5E8 0%, #FFE8C8 100%);
+    min-height: 100vh;
+  }
+  .top-banner {
+    background: linear-gradient(135deg, var(--orange), var(--gold));
+    color: white; text-align: center;
+    padding: 14px 20px;
+  }
+  .top-banner p { font-size:.82rem; opacity:.9; }
+  .top-banner strong { font-size:.95rem; font-weight:800; }
+  
+  .main { padding: 24px 16px 40px; max-width: 480px; margin: 0 auto; }
+
+  .event-card {
+    background: white; border-radius: 24px;
+    padding: 28px 24px; box-shadow: var(--shadow);
+    margin-bottom: 24px;
+    animation: fadeUp .6s ease both;
+    text-align: center;
+  }
+  @keyframes fadeUp {
+    from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)}
+  }
+  .event-icon { font-size: 3rem; display:block; margin-bottom: 10px; animation: spin 20s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .event-card h1 { font-size:1.7rem; color:var(--orange); margin-bottom:4px; }
+  .event-card p  { color:var(--gray); font-size:.88rem; line-height:1.5; }
+  .event-meta {
+    display:flex; gap:16px; justify-content:center; margin-top:14px; flex-wrap:wrap;
+  }
+  .meta-item {
+    background:var(--orange-pale); border-radius:10px;
+    padding:6px 12px; font-size:.82rem; color:var(--orange); font-weight:700;
+  }
+  
+  .section-title {
+    font-family:'Playfair Display',serif;
+    font-size:1.3rem; color:var(--dark); margin-bottom:16px;
+  }
+  .section-sub { color:var(--gray); font-size:.85rem; margin-top:-10px; margin-bottom:16px; }
+
+  .teams-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:24px;
+  }
+  .team-btn {
+    background: white; border: 2.5px solid var(--orange-mid);
+    border-radius: 18px; padding: 18px 12px;
+    cursor: pointer; text-align:center;
+    transition: all .2s; font-family:'Nunito',sans-serif;
+    box-shadow: 0 4px 12px rgba(255,107,0,.1);
+    position:relative; overflow:hidden;
+  }
+  .team-btn::before {
+    content:''; position:absolute; inset:0;
+    background: linear-gradient(135deg, var(--orange), var(--gold));
+    opacity:0; transition:opacity .2s;
+  }
+  .team-btn:hover { border-color:var(--orange); transform:translateY(-3px); box-shadow:0 8px 24px rgba(255,107,0,.2); }
+  .team-btn:hover::before { opacity:.05; }
+  .team-btn.selected {
+    border-color: var(--orange);
+    background: linear-gradient(135deg, var(--orange-pale), #FFF0D0);
+    transform:scale(1.02);
+    box-shadow:0 8px 24px rgba(255,107,0,.25);
+  }
+  .team-btn .t-emoji { font-size:2.2rem; display:block; margin-bottom:6px; position:relative; }
+  .team-btn .t-name { font-weight:800; font-size:.9rem; color:var(--dark); position:relative; }
+  .team-btn .t-country { font-size:.75rem; color:var(--gray); position:relative; }
+  .team-btn .t-count {
+    position:absolute; top:8px; right:10px;
+    background:var(--orange-pale); color:var(--orange);
+    border-radius:99px; padding:2px 8px; font-size:.72rem; font-weight:700;
+  }
+
+  .confirm-btn {
+    width:100%; padding:16px;
+    background:linear-gradient(135deg, var(--orange), var(--gold));
+    color:white; border:none; border-radius:16px;
+    font-family:'Nunito',sans-serif; font-size:1.05rem; font-weight:800;
+    cursor:pointer;
+    transition:transform .15s, box-shadow .15s, opacity .2s;
+    box-shadow:0 6px 24px rgba(255,107,0,.4);
+    opacity:.5; pointer-events:none;
+  }
+  .confirm-btn.active { opacity:1; pointer-events:all; }
+  .confirm-btn.active:hover { transform:translateY(-2px); box-shadow:0 10px 32px rgba(255,107,0,.5); }
+
+  .loading { text-align:center; color:var(--gray); padding:30px; font-size:.9rem; }
+  .success-overlay {
+    position:fixed; inset:0; background:rgba(255,248,235,.97);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    z-index:100; opacity:0; pointer-events:none;
+    transition:opacity .4s;
+  }
+  .success-overlay.show { opacity:1; pointer-events:all; }
+  .success-icon { font-size:5rem; animation:bounce .6s cubic-bezier(.34,1.56,.64,1) both; }
+  @keyframes bounce { from{transform:scale(0)} to{transform:scale(1)} }
+  .success-overlay h2 { font-size:1.8rem; color:var(--orange); margin:16px 0 8px; }
+  .success-overlay p { color:var(--gray); font-size:.95rem; }
+  .next-btn {
+    margin-top:24px; padding:14px 40px;
+    background:linear-gradient(135deg, var(--orange), var(--gold));
+    color:white; border:none; border-radius:14px;
+    font-family:'Nunito',sans-serif; font-size:1rem; font-weight:800;
+    cursor:pointer; box-shadow:0 6px 24px rgba(255,107,0,.4);
+    transition:transform .15s;
+  }
+  .next-btn:hover { transform:translateY(-2px); }
+</style>
+{% endblock %}
+{% block body %}
+<div class="top-banner">
+  <strong>✨ Мировой калейдоскоп</strong>
+  <p>📅 22 марта &nbsp;•&nbsp; 📍 Дом дружбы</p>
+</div>
+
+<div class="main">
+  <div class="event-card">
+    <span class="event-icon">🌍</span>
+    <h1>Добро пожаловать!</h1>
+    <p>Приглашаем вас принять участие в ярком активе «Мировой калейдоскоп» — знакомство с культурами разных стран, музыка, танцы и крутая атмосфера!</p>
+    <div class="event-meta">
+      <span class="meta-item">🎭 Творческие выступления</span>
+      <span class="meta-item">🤝 Новые знакомства</span>
+      <span class="meta-item">🎶 Музыка и танцы</span>
+    </div>
+  </div>
+
+  <div id="step-choose">
+    <div class="section-title">🏳️ Выберите свою команду</div>
+    <p class="section-sub">Нажмите на команду, в которой вы участвуете</p>
+    <div id="teams-grid" class="teams-grid">
+      <div class="loading">Загружаем команды...</div>
+    </div>
+    <button id="confirm-btn" class="confirm-btn" onclick="joinTeam()">Присоединиться к команде →</button>
+  </div>
+</div>
+
+<div class="success-overlay" id="success">
+  <div class="success-icon">🎉</div>
+  <h2>Вы в команде!</h2>
+  <p id="success-text">Теперь вы можете голосовать за другие команды</p>
+  <button class="next-btn" onclick="goVote()">Перейти к голосованию →</button>
+</div>
+
+<script>
+let selectedTeam = null;
+
+async function checkStatus(){
+  const r = await fetch('/api/my-status');
+  const d = await r.json();
+  if(d.team_id){ window.location.href='/vote'; }
+}
+
+async function loadTeams(){
+  const r = await fetch('/api/teams');
+  const teams = await r.json();
+  const grid = document.getElementById('teams-grid');
+  if(!teams.length){ grid.innerHTML='<div class="loading" style="grid-column:span 2">Команды ещё не созданы. Ждём организаторов...</div>'; return; }
+  grid.innerHTML = teams.map(t=>`
+    <div class="team-btn" id="tb-${t.id}" onclick="selectTeam(${t.id})">
+      <span class="t-count">${t.members||0} чел.</span>
+      <span class="t-emoji">${t.emoji||'🌍'}</span>
+      <div class="t-name">${t.name}</div>
+      <div class="t-country">${t.country||''}</div>
+    </div>`).join('');
+}
+
+function selectTeam(id){
+  document.querySelectorAll('.team-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('tb-'+id).classList.add('selected');
+  selectedTeam = id;
+  const btn = document.getElementById('confirm-btn');
+  btn.classList.add('active');
+}
+
+async function joinTeam(){
+  if(!selectedTeam) return;
+  const r = await fetch('/api/join-team', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({team_id: selectedTeam})
+  });
+  if(r.ok){
+    const teams = await (await fetch('/api/teams')).json();
+    const t = teams.find(x=>x.id===selectedTeam);
+    document.getElementById('success-text').textContent = `Команда: ${t ? t.emoji+' '+t.name : ''}`;
+    document.getElementById('success').classList.add('show');
+  }
+}
+
+function goVote(){ window.location.href='/vote'; }
+
+checkStatus();
+loadTeams();
+</script>
+{% endblock %}

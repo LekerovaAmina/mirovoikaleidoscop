@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+{% block title %}Голосование — Мировой калейдоскоп{% endblock %}
+{% block head %}
+<style>
+  body {
+    background: linear-gradient(160deg, #FFF5E8 0%, #FFE8C8 100%);
+    min-height: 100vh;
+  }
+  .top-banner {
+    background: linear-gradient(135deg, var(--orange), var(--gold));
+    color: white; text-align: center; padding: 14px 20px;
+  }
+  .top-banner p { font-size:.82rem; opacity:.9; }
+  .top-banner strong { font-size:.95rem; font-weight:800; }
+
+  .main { padding: 24px 16px 40px; max-width: 480px; margin: 0 auto; }
+
+  .vote-header {
+    background: white; border-radius: 24px;
+    padding: 24px; text-align: center;
+    box-shadow: var(--shadow); margin-bottom: 24px;
+    animation: fadeUp .5s ease both;
+  }
+  @keyframes fadeUp {
+    from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)}
+  }
+  .vote-header .icon { font-size:2.5rem; margin-bottom:8px; }
+  .vote-header h1 { font-size:1.6rem; color:var(--orange); }
+  .vote-header p { color:var(--gray); font-size:.88rem; margin-top:4px; }
+
+  .my-team-box {
+    background: linear-gradient(135deg, var(--orange-pale), #FFF0D0);
+    border: 2px solid var(--orange-light);
+    border-radius: 16px; padding: 14px 18px;
+    display: flex; align-items: center; gap:12px;
+    margin-bottom: 20px;
+    animation: fadeUp .5s .1s ease both;
+  }
+  .my-team-box .label { font-size:.75rem; color:var(--gray); font-weight:700; text-transform:uppercase; }
+  .my-team-box .name { font-weight:800; color:var(--orange); font-size:1rem; }
+
+  .section-title {
+    font-family:'Playfair Display',serif;
+    font-size:1.2rem; color:var(--dark); margin-bottom:6px;
+  }
+  .section-sub { color:var(--gray); font-size:.83rem; margin-bottom:16px; }
+
+  .teams-list { display:flex; flex-direction:column; gap:10px; }
+  .vote-card {
+    background:white; border:2.5px solid var(--orange-mid);
+    border-radius:18px; padding:16px 18px;
+    display:flex; align-items:center; gap:14px;
+    cursor:pointer; transition:all .2s;
+    box-shadow:0 3px 10px rgba(255,107,0,.08);
+    animation: fadeUp .4s ease both;
+  }
+  .vote-card:hover { border-color:var(--orange); transform:translateX(4px); box-shadow:0 6px 20px rgba(255,107,0,.15); }
+  .vote-card.selected {
+    border-color:var(--orange);
+    background:linear-gradient(135deg,var(--orange-pale),#FFF0D0);
+    transform:scale(1.02);
+  }
+  .vote-card .v-emoji { font-size:2rem; flex-shrink:0; }
+  .vote-card .v-info { flex:1; }
+  .vote-card .v-name { font-weight:800; font-size:.95rem; }
+  .vote-card .v-country { color:var(--gray); font-size:.8rem; }
+  .vote-card .v-radio {
+    width:22px; height:22px; border-radius:50%;
+    border:2.5px solid var(--orange-mid);
+    display:flex; align-items:center; justify-content:center;
+    transition:all .2s; flex-shrink:0;
+  }
+  .vote-card.selected .v-radio {
+    background:var(--orange); border-color:var(--orange);
+  }
+  .vote-card.selected .v-radio::after {
+    content:'✓'; color:white; font-size:.75rem; font-weight:900;
+  }
+
+  .vote-btn {
+    width:100%; padding:16px; margin-top:20px;
+    background:linear-gradient(135deg,var(--orange),var(--gold));
+    color:white; border:none; border-radius:16px;
+    font-family:'Nunito',sans-serif; font-size:1.05rem; font-weight:800;
+    cursor:pointer; box-shadow:0 6px 24px rgba(255,107,0,.4);
+    transition:transform .15s, box-shadow .15s, opacity .2s;
+    opacity:.5; pointer-events:none;
+  }
+  .vote-btn.active { opacity:1; pointer-events:all; }
+  .vote-btn.active:hover { transform:translateY(-2px); box-shadow:0 10px 32px rgba(255,107,0,.5); }
+
+  .done-overlay {
+    position:fixed; inset:0;
+    background:linear-gradient(160deg, #FFF5E8 0%, #FFE8C8 100%);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    z-index:100; padding:20px; text-align:center;
+    opacity:0; pointer-events:none; transition:opacity .5s;
+  }
+  .done-overlay.show { opacity:1; pointer-events:all; }
+  .done-big { font-size:5rem; animation:pop .7s cubic-bezier(.34,1.56,.64,1) both; }
+  @keyframes pop { from{transform:scale(0) rotate(-20deg)} to{transform:scale(1) rotate(0)} }
+  .done-overlay h2 { font-size:2rem; color:var(--orange); margin:16px 0 8px; }
+  .done-overlay p { color:var(--gray); font-size:.95rem; line-height:1.6; max-width:300px; }
+  .stars { font-size:1.5rem; letter-spacing:4px; margin-top:8px; animation:twinkle 2s ease-in-out infinite; }
+  @keyframes twinkle { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  .loading { text-align:center; color:var(--gray); padding:30px; font-size:.9rem; }
+</style>
+{% endblock %}
+{% block body %}
+<div class="top-banner">
+  <strong>🗳️ Голосование</strong>
+  <p>Мировой калейдоскоп • 22 марта</p>
+</div>
+
+<div class="main">
+  <div class="vote-header">
+    <div class="icon">🗳️</div>
+    <h1>Ваш голос</h1>
+    <p>Выберите команду, которая вам понравилась больше всего!</p>
+  </div>
+
+  <div class="my-team-box" id="my-team-box" style="display:none">
+    <span style="font-size:1.8rem" id="my-team-emoji">🌍</span>
+    <div>
+      <div class="label">Ваша команда</div>
+      <div class="name" id="my-team-name">...</div>
+    </div>
+  </div>
+
+  <div class="section-title">🏆 За кого голосуете?</div>
+  <p class="section-sub">Голосовать за свою команду нельзя</p>
+
+  <div id="teams-list" class="teams-list">
+    <div class="loading">Загружаем команды...</div>
+  </div>
+
+  <button id="vote-btn" class="vote-btn" onclick="submitVote()">Отдать голос ✨</button>
+</div>
+
+<div class="done-overlay" id="done">
+  <div class="done-big">🎊</div>
+  <h2>Голос принят!</h2>
+  <p>Спасибо за участие в «Мировом калейдоскопе»! Желаем всем командам удачи!</p>
+  <div class="stars">⭐ ⭐ ⭐</div>
+</div>
+
+<script>
+let selectedVote = null;
+let myTeamId = null;
+
+async function init(){
+  const r = await fetch('/api/my-status');
+  const d = await r.json();
+  myTeamId = d.team_id;
+  if(d.voted_for){ showDone(); return; }
+  loadTeams();
+}
+
+async function loadTeams(){
+  const r = await fetch('/api/teams');
+  const teams = await r.json();
+
+  // Show my team
+  const me = teams.find(t=>t.id===myTeamId);
+  if(me){
+    document.getElementById('my-team-emoji').textContent=me.emoji||'🌍';
+    document.getElementById('my-team-name').textContent=me.name;
+    document.getElementById('my-team-box').style.display='flex';
+  }
+
+  const list = document.getElementById('teams-list');
+  const others = teams.filter(t=>t.id!==myTeamId);
+  if(!others.length){ list.innerHTML='<div class="loading">Нет других команд для голосования</div>'; return; }
+  list.innerHTML = others.map((t,i)=>`
+    <div class="vote-card" id="vc-${t.id}" onclick="selectVote(${t.id})" style="animation-delay:${i*.07}s">
+      <span class="v-emoji">${t.emoji||'🌍'}</span>
+      <div class="v-info">
+        <div class="v-name">${t.name}</div>
+        <div class="v-country">${t.country||''}</div>
+      </div>
+      <div class="v-radio"></div>
+    </div>`).join('');
+}
+
+function selectVote(id){
+  document.querySelectorAll('.vote-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('vc-'+id).classList.add('selected');
+  selectedVote = id;
+  document.getElementById('vote-btn').classList.add('active');
+}
+
+async function submitVote(){
+  if(!selectedVote) return;
+  const r = await fetch('/api/vote', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({team_id: selectedVote})
+  });
+  if(r.ok){ showDone(); }
+}
+
+function showDone(){
+  document.getElementById('done').classList.add('show');
+}
+
+init();
+</script>
+{% endblock %}

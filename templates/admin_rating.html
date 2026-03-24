@@ -1,0 +1,413 @@
+{% extends 'base.html' %}
+{% block title %}Рейтинг команд — Мировой калейдоскоп{% endblock %}
+{% block head %}
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: #1A0A00;
+    min-height: 100vh;
+    overflow: hidden;
+    font-family: 'Nunito', sans-serif;
+  }
+  canvas#fireworks {
+    position: fixed; inset: 0; pointer-events: none; z-index: 5;
+  }
+  canvas#confetti {
+    position: fixed; inset: 0; pointer-events: none; z-index: 6;
+  }
+
+  .bg {
+    position: fixed; inset: 0; z-index: 0;
+    background: radial-gradient(ellipse at 50% 0%, #3D1500 0%, #1A0A00 60%);
+  }
+  .bg-glow {
+    position: fixed;
+    top: -200px; left: 50%; transform: translateX(-50%);
+    width: 800px; height: 400px;
+    background: radial-gradient(ellipse, rgba(255,140,0,0.25) 0%, transparent 70%);
+    pointer-events: none; z-index: 1;
+    animation: glowPulse 4s ease-in-out infinite;
+  }
+  @keyframes glowPulse {
+    0%,100% { opacity:.7; transform: translateX(-50%) scaleX(1); }
+    50%      { opacity:1; transform: translateX(-50%) scaleX(1.1); }
+  }
+
+  .page { position: relative; z-index: 10; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 40px 20px 60px; }
+
+  .header { text-align: center; margin-bottom: 48px; }
+  .header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    color: var(--gold);
+    text-shadow: 0 0 40px rgba(255,184,0,0.6), 0 2px 0 rgba(0,0,0,.5);
+    letter-spacing: .02em;
+    animation: titleIn 1s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  .header p {
+    color: rgba(255,200,120,.7);
+    font-size: 1rem; margin-top: 8px;
+    animation: titleIn 1s .2s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  @keyframes titleIn {
+    from { opacity:0; transform: translateY(-30px) scale(.8); }
+    to   { opacity:1; transform: translateY(0) scale(1); }
+  }
+
+  .podium-area {
+    display: flex; align-items: flex-end; justify-content: center;
+    gap: 16px; margin-bottom: 40px;
+    width: 100%; max-width: 700px;
+    animation: fadeUp 1s .5s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity:0; transform: translateY(40px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+  .podium-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    cursor: default;
+  }
+  .podium-emoji { font-size: 2rem; margin-bottom: 6px; }
+  .podium-name {
+    color: white; font-weight: 800; font-size: .95rem;
+    text-align: center; margin-bottom: 8px;
+    text-shadow: 0 1px 4px rgba(0,0,0,.5);
+    max-width: 120px;
+  }
+  .podium-votes {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem; font-weight: 900;
+    color: var(--gold);
+    text-shadow: 0 0 20px rgba(255,184,0,.8);
+  }
+  .podium-block {
+    width: 100%; border-radius: 14px 14px 0 0;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 2.5rem; font-weight: 900; color: white;
+    text-shadow: 0 2px 8px rgba(0,0,0,.4);
+    transition: height .8s cubic-bezier(.34,1.3,.64,1);
+  }
+  .podium-item.rank-1 .podium-block {
+    height: 180px;
+    background: linear-gradient(180deg, #FFD700 0%, #FF8C00 100%);
+    box-shadow: 0 0 60px rgba(255,184,0,.6), inset 0 2px 0 rgba(255,255,255,.3);
+  }
+  .podium-item.rank-2 .podium-block {
+    height: 130px;
+    background: linear-gradient(180deg, #E8E8E8 0%, #A8A8A8 100%);
+    box-shadow: 0 0 30px rgba(200,200,200,.3);
+  }
+  .podium-item.rank-3 .podium-block {
+    height: 100px;
+    background: linear-gradient(180deg, #CD9B5A 0%, #8B6534 100%);
+    box-shadow: 0 0 20px rgba(180,130,80,.3);
+  }
+
+  .list-section {
+    width: 100%; max-width: 700px;
+    animation: fadeUp 1s .8s ease both;
+  }
+  .list-title {
+    font-family: 'Playfair Display', serif;
+    color: rgba(255,200,120,.6);
+    font-size: .85rem; letter-spacing: .1em; text-transform: uppercase;
+    margin-bottom: 12px; text-align: center;
+  }
+  .team-row {
+    background: rgba(255,140,0,0.08);
+    border: 1px solid rgba(255,140,0,0.2);
+    border-radius: 16px;
+    padding: 14px 20px;
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 10px;
+    transition: transform .2s, background .2s;
+  }
+  .team-row:hover {
+    background: rgba(255,140,0,0.15);
+    transform: translateX(4px);
+  }
+  .row-rank {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem; color: rgba(255,200,100,.5);
+    width: 32px; text-align: center;
+  }
+  .row-emoji { font-size: 1.5rem; }
+  .row-name { flex: 1; color: white; font-weight: 700; }
+  .row-country { color: rgba(255,200,100,.5); font-size: .85rem; }
+  .row-bar-wrap {
+    width: 120px; height: 8px;
+    background: rgba(255,255,255,.1);
+    border-radius: 99px; overflow: hidden;
+  }
+  .row-bar {
+    height: 100%; border-radius: 99px;
+    background: linear-gradient(90deg, var(--orange), var(--gold));
+    transition: width 1.2s ease;
+  }
+  .row-votes {
+    color: var(--gold); font-weight: 800;
+    min-width: 40px; text-align: right;
+  }
+
+  .loading {
+    color: rgba(255,200,100,.5); font-size: 1rem; text-align: center;
+    padding: 40px;
+    animation: blink 1.4s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:.5} 50%{opacity:1} }
+
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(26,10,0,0.85);
+    backdrop-filter: blur(12px);
+    display: flex; align-items: center; gap: 0;
+    padding: 0 24px; height: 52px;
+    border-bottom: 1px solid rgba(255,140,0,.2);
+  }
+  .nav-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem; color: var(--gold); margin-right: auto;
+  }
+  .nav-link {
+    padding: 6px 14px; border-radius: 8px;
+    text-decoration: none; font-weight: 700;
+    color: rgba(255,200,100,.6); font-size: .82rem;
+    transition: all .2s;
+  }
+  .nav-link:hover, .nav-link.active { color: var(--gold); background: rgba(255,184,0,.1); }
+  .nav-link.logout { color: rgba(255,100,80,.6); }
+  .nav-link.logout:hover { color: #FF6060; background: rgba(255,60,60,.1); }
+
+  .page { padding-top: 80px; }
+</style>
+{% endblock %}
+{% block body %}
+<canvas id="fireworks"></canvas>
+<canvas id="confetti"></canvas>
+<div class="bg"></div>
+<div class="bg-glow"></div>
+
+<nav>
+  <span class="nav-logo">🌍 Мировой Калейдоскоп</span>
+  <a href="/admin/qr" class="nav-link">QR-код</a>
+  <a href="/admin/rating" class="nav-link active">Рейтинг</a>
+  <a href="/admin/dashboard" class="nav-link">Панель</a>
+  <a href="/admin/logout" class="nav-link logout">Выйти</a>
+</nav>
+
+<div class="page">
+  <div class="header">
+    <h1>✨ Рейтинг команд ✨</h1>
+    <p>Мировой калейдоскоп • Дом дружбы • 22 марта</p>
+  </div>
+
+  <div id="podium-area" class="podium-area">
+    <div class="loading">Загружаем результаты...</div>
+  </div>
+
+  <div class="list-section">
+    <div class="list-title">— Все команды —</div>
+    <div id="team-list"></div>
+  </div>
+</div>
+
+<script>
+// ── FIREWORKS ──────────────────────────────────────────────────────────────
+const fwCanvas = document.getElementById('fireworks');
+const fwCtx = fwCanvas.getContext('2d');
+fwCanvas.width = window.innerWidth;
+fwCanvas.height = window.innerHeight;
+
+const COLORS = ['#FF6B00','#FFB800','#FF4444','#FFE066','#FF8C42','#FFDA44','#FFF0B0','#FF5500'];
+
+class Particle {
+  constructor(x,y,color){
+    this.x=x; this.y=y; this.color=color;
+    const angle = Math.random()*Math.PI*2;
+    const speed = 2 + Math.random()*6;
+    this.vx = Math.cos(angle)*speed;
+    this.vy = Math.sin(angle)*speed;
+    this.life=1; this.decay=0.015+Math.random()*.02;
+    this.size=2+Math.random()*2;
+  }
+  update(){ this.x+=this.vx; this.y+=this.vy; this.vy+=0.08; this.vx*=0.99; this.life-=this.decay; }
+  draw(){
+    fwCtx.globalAlpha=this.life;
+    fwCtx.fillStyle=this.color;
+    fwCtx.beginPath();
+    fwCtx.arc(this.x,this.y,this.size,0,Math.PI*2);
+    fwCtx.fill();
+  }
+}
+
+let particles = [];
+let fwActive = true;
+let fwTimer = 0;
+
+function launchFirework(){
+  const x = window.innerWidth*.2 + Math.random()*window.innerWidth*.6;
+  const y = window.innerHeight*.1 + Math.random()*window.innerHeight*.4;
+  const color = COLORS[Math.floor(Math.random()*COLORS.length)];
+  for(let i=0;i<120;i++) particles.push(new Particle(x,y,color));
+  // Trail
+  for(let i=0;i<40;i++){
+    const p = new Particle(x,y,'#FFFFFF');
+    const a=Math.random()*Math.PI*2, s=.5+Math.random()*2;
+    p.vx=Math.cos(a)*s; p.vy=Math.sin(a)*s; p.size=1;
+    particles.push(p);
+  }
+}
+
+function animateFireworks(ts){
+  if(fwActive){
+    fwCtx.clearRect(0,0,fwCanvas.width,fwCanvas.height);
+    if(ts-fwTimer > 400){ fwTimer=ts; launchFirework(); }
+    particles = particles.filter(p=>p.life>0);
+    particles.forEach(p=>{ p.update(); p.draw(); });
+    fwCtx.globalAlpha=1;
+    requestAnimationFrame(animateFireworks);
+  } else {
+    fwCtx.clearRect(0,0,fwCanvas.width,fwCanvas.height);
+    particles = particles.filter(p=>p.life>0);
+    if(particles.length>0){
+      particles.forEach(p=>{ p.update(); p.draw(); });
+      fwCtx.globalAlpha=1;
+      requestAnimationFrame(animateFireworks);
+    }
+  }
+}
+requestAnimationFrame(animateFireworks);
+setTimeout(()=>{ fwActive=false; }, 5000);
+
+// ── CONFETTI ───────────────────────────────────────────────────────────────
+const cfCanvas = document.getElementById('confetti');
+const cfCtx = cfCanvas.getContext('2d');
+cfCanvas.width = window.innerWidth;
+cfCanvas.height = window.innerHeight;
+
+const CF_COLORS = ['#FF6B00','#FFB800','#FFE066','#FF4444','#FFA040','#FFF0B0','#FF8C42','#FFD700','#FF5500','#FFCC00'];
+
+class ConfettiPiece {
+  constructor(burst){
+    this.reset(burst);
+  }
+  reset(burst){
+    this.x = Math.random()*cfCanvas.width;
+    this.y = burst ? Math.random()*cfCanvas.height - cfCanvas.height : -20;
+    this.w = 6+Math.random()*8;
+    this.h = 4+Math.random()*6;
+    this.color = CF_COLORS[Math.floor(Math.random()*CF_COLORS.length)];
+    this.vy = (burst ? 1 : 1.5) + Math.random()*3;
+    this.vx = (Math.random()-.5)*2;
+    this.rot = Math.random()*360;
+    this.rotV = (Math.random()-.5)*5;
+    this.opacity = burst ? .5+Math.random()*.5 : .7+Math.random()*.3;
+    this.shape = Math.random()>.5 ? 'rect' : 'circle';
+  }
+  update(){
+    this.x+=this.vx; this.y+=this.vy; this.rot+=this.rotV;
+    if(this.y>cfCanvas.height+20) this.reset(false);
+  }
+  draw(){
+    cfCtx.save();
+    cfCtx.globalAlpha=this.opacity;
+    cfCtx.fillStyle=this.color;
+    cfCtx.translate(this.x,this.y);
+    cfCtx.rotate(this.rot*Math.PI/180);
+    if(this.shape==='circle'){
+      cfCtx.beginPath();
+      cfCtx.arc(0,0,this.w/2,0,Math.PI*2);
+      cfCtx.fill();
+    } else {
+      cfCtx.fillRect(-this.w/2,-this.h/2,this.w,this.h);
+    }
+    cfCtx.restore();
+  }
+}
+
+// Start with LOTS of confetti, then settle
+let confettiPieces = [];
+for(let i=0;i<300;i++) confettiPieces.push(new ConfettiPiece(true));
+
+function animateConfetti(){
+  cfCtx.clearRect(0,0,cfCanvas.width,cfCanvas.height);
+  // Gradually reduce to 80 pieces after 6s
+  const elapsed = Date.now()-startTime;
+  const targetCount = elapsed < 6000 ? 300 : 80;
+  while(confettiPieces.length < targetCount) confettiPieces.push(new ConfettiPiece(false));
+  if(confettiPieces.length > targetCount) confettiPieces.splice(targetCount);
+  confettiPieces.forEach(p=>{ p.update(); p.draw(); });
+  cfCtx.globalAlpha=1;
+  requestAnimationFrame(animateConfetti);
+}
+const startTime = Date.now();
+requestAnimationFrame(animateConfetti);
+
+// Resize
+window.addEventListener('resize',()=>{
+  fwCanvas.width=cfCanvas.width=window.innerWidth;
+  fwCanvas.height=cfCanvas.height=window.innerHeight;
+});
+
+// ── DATA ───────────────────────────────────────────────────────────────────
+async function loadRating(){
+  const res = await fetch('/api/teams');
+  const teams = await res.json();
+  renderPodium(teams);
+  renderList(teams);
+}
+
+function renderPodium(teams){
+  const top3 = teams.slice(0,3);
+  const area = document.getElementById('podium-area');
+  if(top3.length===0){ area.innerHTML='<div class="loading">Команды не созданы</div>'; return; }
+
+  // Reorder: 2nd, 1st, 3rd
+  const ordered = top3.length>=3
+    ? [top3[1], top3[0], top3[2]]
+    : top3.length===2
+    ? [top3[1], top3[0]]
+    : [top3[0]];
+
+  const rankMap = {0:2, 1:1, 2:3};
+  area.innerHTML = ordered.map((t,i)=>{
+    const rank = t===top3[0] ? 1 : t===top3[1] ? 2 : 3;
+    const medal = rank===1?'🥇':rank===2?'🥈':'🥉';
+    return `
+    <div class="podium-item rank-${rank}" style="animation-delay:${i*.15}s">
+      <div class="podium-emoji">${t.emoji||'🌍'}</div>
+      <div class="podium-name">${t.name}</div>
+      <div class="podium-votes">${t.votes||0}</div>
+      <div class="podium-block">${medal}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderList(teams){
+  const maxVotes = Math.max(...teams.map(t=>t.votes||0), 1);
+  const list = document.getElementById('team-list');
+  list.innerHTML = teams.map((t,i)=>{
+    const pct = ((t.votes||0)/maxVotes*100).toFixed(1);
+    return `
+    <div class="team-row" style="animation: fadeUp .5s ${i*.08}s ease both">
+      <div class="row-rank">${i+1}</div>
+      <div class="row-emoji">${t.emoji||'🌍'}</div>
+      <div class="row-name">${t.name}<br><span class="row-country">${t.country||''}</span></div>
+      <div class="row-bar-wrap"><div class="row-bar" style="width:0%" data-pct="${pct}%"></div></div>
+      <div class="row-votes">${t.votes||0}</div>
+    </div>`;
+  }).join('');
+  // Animate bars
+  setTimeout(()=>{
+    list.querySelectorAll('.row-bar').forEach(b=>{
+      b.style.width = b.dataset.pct;
+    });
+  }, 100);
+}
+
+loadRating();
+setInterval(loadRating, 5000);
+</script>
+{% endblock %}

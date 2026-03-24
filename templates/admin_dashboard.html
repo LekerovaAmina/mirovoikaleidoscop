@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+{% block title %}Панель — Мировой калейдоскоп{% endblock %}
+{% block head %}
+<style>
+  body {
+    background: linear-gradient(160deg, #FFF5E8 0%, #FFE8C8 100%);
+    min-height: 100vh;
+  }
+  nav {
+    background: white;
+    display: flex; align-items: center;
+    padding: 0 24px; height: 60px;
+    box-shadow: 0 2px 12px rgba(255,107,0,0.1);
+  }
+  .nav-logo { font-family:'Playfair Display',serif; font-size:1.1rem; font-weight:900; color:var(--orange); margin-right:auto; }
+  .nav-link { padding:8px 16px; border-radius:10px; text-decoration:none; font-weight:700; color:var(--gray); font-size:.88rem; transition:all .2s; }
+  .nav-link:hover,.nav-link.active { background:var(--orange-pale); color:var(--orange); }
+  .nav-link.logout { color:#C00; }
+  .nav-link.logout:hover { background:#FFF0F0; }
+
+  .main { padding: 32px 24px; max-width: 1000px; margin: 0 auto; }
+  h2 { font-size:1.5rem; color:var(--orange); margin-bottom:20px; }
+
+  .stats-row {
+    display: grid; grid-template-columns: repeat(3,1fr); gap:16px; margin-bottom:32px;
+  }
+  .stat-card {
+    background: white; border-radius: 20px;
+    padding: 24px; box-shadow: var(--shadow);
+    text-align: center;
+    animation: fadeUp .5s ease both;
+  }
+  .stat-card:nth-child(2) { animation-delay:.1s; }
+  .stat-card:nth-child(3) { animation-delay:.2s; }
+  @keyframes fadeUp {
+    from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)}
+  }
+  .stat-num {
+    font-family:'Playfair Display',serif;
+    font-size:3rem; color:var(--orange); font-weight:900;
+    line-height:1;
+  }
+  .stat-label { color:var(--gray); font-size:.88rem; margin-top:6px; font-weight:600; }
+  .stat-icon { font-size:1.8rem; margin-bottom:8px; }
+
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+  .card {
+    background:white; border-radius:20px; padding:28px;
+    box-shadow:var(--shadow);
+    animation: fadeUp .5s .3s ease both;
+  }
+  .card:last-child { animation-delay:.4s; }
+
+  .form-group { margin-bottom:14px; }
+  label { display:block; font-weight:700; font-size:.82rem; color:var(--gray); margin-bottom:6px; text-transform:uppercase; letter-spacing:.05em; }
+  input, select {
+    width:100%; padding:10px 14px;
+    border:2px solid var(--orange-mid);
+    border-radius:12px;
+    font-family:'Nunito',sans-serif; font-size:.95rem;
+    background:var(--orange-pale); color:var(--dark);
+    outline:none;
+    transition:border-color .2s;
+  }
+  input:focus, select:focus { border-color:var(--orange); }
+  .row-2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+  .btn {
+    width:100%; padding:12px;
+    background:linear-gradient(135deg, var(--orange), var(--gold));
+    color:white; border:none; border-radius:12px;
+    font-family:'Nunito',sans-serif; font-size:.95rem; font-weight:800;
+    cursor:pointer;
+    transition:transform .15s, box-shadow .15s;
+    box-shadow:0 4px 16px rgba(255,107,0,0.35);
+    margin-top:4px;
+  }
+  .btn:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(255,107,0,.45); }
+
+  .team-table { width:100%; border-collapse:collapse; font-size:.9rem; }
+  .team-table th {
+    text-align:left; padding:8px 10px;
+    color:var(--gray); font-size:.78rem; text-transform:uppercase;
+    border-bottom:2px solid var(--orange-mid);
+  }
+  .team-table td { padding:10px; border-bottom:1px solid var(--orange-pale); }
+  .team-table tr:last-child td { border:none; }
+  .team-emoji { font-size:1.3rem; }
+  .badge {
+    background:var(--orange-pale); color:var(--orange);
+    padding:2px 10px; border-radius:99px; font-weight:700; font-size:.82rem;
+  }
+  .del-btn {
+    background:none; border:none; cursor:pointer; font-size:1rem;
+    color:#DDA0A0; transition:color .2s;
+  }
+  .del-btn:hover { color:#C00; }
+  .msg { padding:8px 12px; border-radius:10px; font-size:.85rem; margin-bottom:12px; display:none; }
+  .msg.ok { background:#F0FFF4; color:#2A7A2A; border:1px solid #A0D0A0; }
+  .msg.err { background:#FFF0F0; color:#C00; border:1px solid #FFB0B0; }
+  .empty { color:var(--gray); font-size:.9rem; text-align:center; padding:20px; }
+
+  @media(max-width:700px) {
+    .grid { grid-template-columns:1fr; }
+    .stats-row { grid-template-columns:1fr 1fr; }
+  }
+</style>
+{% endblock %}
+{% block body %}
+<nav>
+  <span class="nav-logo">🌍 Калейдоскоп</span>
+  <a href="/admin/qr" class="nav-link">QR-код</a>
+  <a href="/admin/rating" class="nav-link">Рейтинг</a>
+  <a href="/admin/dashboard" class="nav-link active">Панель</a>
+  <a href="/admin/logout" class="nav-link logout">Выйти</a>
+</nav>
+
+<div class="main">
+  <h2>📊 Панель управления</h2>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon">👥</div>
+      <div class="stat-num" id="stat-online">—</div>
+      <div class="stat-label">Участников онлайн</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🗳️</div>
+      <div class="stat-num" id="stat-votes">—</div>
+      <div class="stat-label">Проголосовали</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🌍</div>
+      <div class="stat-num" id="stat-teams">—</div>
+      <div class="stat-label">Команд</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>➕ Создать команду</h2>
+      <div id="create-msg" class="msg"></div>
+      <div class="form-group">
+        <label>Название команды</label>
+        <input type="text" id="team-name" placeholder="Например: Азия">
+      </div>
+      <div class="row-2">
+        <div class="form-group">
+          <label>Страна / Регион</label>
+          <input type="text" id="team-country" placeholder="Казахстан">
+        </div>
+        <div class="form-group">
+          <label>Эмодзи флага</label>
+          <input type="text" id="team-emoji" placeholder="🇰🇿" maxlength="4">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Цвет команды</label>
+        <input type="color" id="team-color" value="#FF6B00" style="height:42px;cursor:pointer;">
+      </div>
+      <button class="btn" onclick="createTeam()">Создать команду</button>
+    </div>
+
+    <div class="card">
+      <h2>📋 Список команд</h2>
+      <table class="team-table">
+        <thead>
+          <tr>
+            <th>Команда</th>
+            <th>Участники</th>
+            <th>Голоса</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="team-list">
+          <tr><td colspan="4" class="empty">Загрузка...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+async function loadStats(){
+  const r = await fetch('/api/stats');
+  const d = await r.json();
+  document.getElementById('stat-online').textContent = d.online;
+  document.getElementById('stat-votes').textContent = d.voted;
+  document.getElementById('stat-teams').textContent = d.teams;
+}
+
+async function loadTeams(){
+  const r = await fetch('/api/teams');
+  const teams = await r.json();
+  const tbody = document.getElementById('team-list');
+  if(!teams.length){ tbody.innerHTML='<tr><td colspan="4" class="empty">Нет команд</td></tr>'; return; }
+  tbody.innerHTML = teams.map(t=>`
+    <tr>
+      <td><span class="team-emoji">${t.emoji||'🌍'}</span> <strong>${t.name}</strong><br>
+          <span style="color:var(--gray);font-size:.8rem">${t.country||''}</span></td>
+      <td><span class="badge">${t.members||0}</span></td>
+      <td><span class="badge" style="background:#FFF0E0">${t.votes||0}</span></td>
+      <td><button class="del-btn" onclick="deleteTeam(${t.id})" title="Удалить">🗑️</button></td>
+    </tr>`).join('');
+}
+
+async function createTeam(){
+  const name = document.getElementById('team-name').value.trim();
+  const country = document.getElementById('team-country').value.trim();
+  const emoji = document.getElementById('team-emoji').value.trim() || '🌍';
+  const color = document.getElementById('team-color').value;
+  const msg = document.getElementById('create-msg');
+  if(!name){ showMsg(msg,'err','Введите название команды'); return; }
+  const r = await fetch('/api/teams', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({name,country,emoji,color})
+  });
+  if(r.ok){
+    showMsg(msg,'ok','Команда создана ✓');
+    document.getElementById('team-name').value='';
+    document.getElementById('team-country').value='';
+    document.getElementById('team-emoji').value='';
+    loadTeams(); loadStats();
+  } else {
+    showMsg(msg,'err','Ошибка при создании');
+  }
+}
+
+async function deleteTeam(id){
+  if(!confirm('Удалить команду?')) return;
+  await fetch(`/api/teams/${id}`,{method:'DELETE'});
+  loadTeams(); loadStats();
+}
+
+function showMsg(el, type, text){
+  el.className='msg '+type; el.textContent=text; el.style.display='block';
+  setTimeout(()=>el.style.display='none', 3000);
+}
+
+loadStats(); loadTeams();
+setInterval(()=>{ loadStats(); loadTeams(); }, 5000);
+</script>
+{% endblock %}
