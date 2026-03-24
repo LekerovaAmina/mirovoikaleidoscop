@@ -14,13 +14,26 @@ def index():
     return redirect(url_for('admin_login'))
 
 # ─── DB CONFIG ────────────────────────────────────────────────────────────────
-DB_CONFIG = {
-    'host': os.environ.get('DB_HOST', 'localhost'),
-    'database': os.environ.get('DB_NAME', 'kaleidoscop'),
-    'user': os.environ.get('DB_USER', 'postgres'),
-    'password': os.environ.get('DB_PASSWORD', 'password'),
-    'port': os.environ.get('DB_PORT', 5432),
-}
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if DATABASE_URL:
+    import urllib.parse
+    r = urllib.parse.urlparse(DATABASE_URL)
+    DB_CONFIG = {
+        'host': r.hostname,
+        'database': r.path[1:],
+        'user': r.username,
+        'password': r.password,
+        'port': r.port or 5432,
+    }
+else:
+    DB_CONFIG = {
+        'host': os.environ.get('DB_HOST', 'localhost'),
+        'database': os.environ.get('DB_NAME', 'kaleidoscop'),
+        'user': os.environ.get('DB_USER', 'postgres'),
+        'password': os.environ.get('DB_PASSWORD', 'password'),
+        'port': os.environ.get('DB_PORT', 5432),
+    }
 
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin2024')
 BASE_URL = os.environ.get('BASE_URL', 'http://localhost:5000')
